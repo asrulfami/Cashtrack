@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CashTrack
 
-## Getting Started
+CashTrack adalah aplikasi web manajemen keuangan pribadi yang dibangun dengan Next.js dan TypeScript. Aplikasi ini memungkinkan pengguna untuk melacak pendapatan dan pengeluaran mereka, melihat riwayat transaksi, dan mendapatkan wawasan melalui visualisasi data.
 
-First, run the development server:
+## Fitur Utama
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Dasbor Utama**: Menampilkan ringkasan keuangan termasuk total pendapatan, total pengeluaran, dan saldo saat ini.
+- **Manajemen Transaksi**: Pengguna dapat melihat daftar semua transaksi dalam tabel yang mudah dibaca.
+- **Visualisasi Data**: Grafik dan bagan (menggunakan Recharts) untuk memvisualisasikan aliran kas dan tren keuangan.
+- **Autentikasi Pengguna**: Sistem masuk dan pendaftaran yang aman menggunakan Next-Auth.
+- **Desain Responsif**: Antarmuka yang dioptimalkan untuk berbagai ukuran layar menggunakan Tailwind CSS.
+- **Mode Gelap**: Tombol untuk beralih antara tema terang dan gelap.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Teknologi yang Digunakan
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: [Next.js](https://nextjs.org/) 16
+- **Bahasa**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Manajemen State & Data Fetching**: [TanStack React Query](https://tanstack.com/query/latest)
+- **Visualisasi Data**: [Recharts](https://recharts.org/)
+- **Autentikasi**: [Next-Auth](https://next-auth.js.org/)
+- **Linting**: [ESLint](https://eslint.org/)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Memulai
 
-## Learn More
+Untuk menjalankan proyek ini secara lokal, ikuti langkah-langkah berikut:
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Clone Repositori**
+    ```bash
+    git clone <URL_REPOSITORI_ANDA>
+    cd cashtrack
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2.  **Instal Dependensi**
+    Gunakan `npm` untuk menginstal semua paket yang diperlukan.
+    ```bash
+    npm install
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3.  **Jalankan Server Pengembangan**
+    Proyek akan berjalan di `http://localhost:3000`.
+    ```bash
+    npm run dev
+    ```
 
-## Deploy on Vercel
+## Skrip yang Tersedia
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Dalam direktori proyek, Anda dapat menjalankan:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev`: Menjalankan aplikasi dalam mode pengembangan.
+- `npm run build`: Membangun aplikasi untuk produksi.
+- `npm run start`: Memulai server produksi setelah build.
+- `npm run lint`: Menjalankan linter ESLint untuk memeriksa masalah pada kode.
