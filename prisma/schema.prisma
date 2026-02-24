@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  accounts      Account[]
+  assets        Asset[]
+  categories    Category[]
+  investments   Investment[]
+  sessions      Session[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  recurringTransactions ReccurringTransaction[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  name         String
+  type         CategoryType
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+  budgets      Budget[]
+  recurringTransactions ReccurringTransaction[]
+
+  @@index([type])
+  @@unique([name, type])
+}
+
+model Transaction {
+  id            String       @id @default(cuid())
+  userId        String
+  date          DateTime
+  description   String
+  amount        Int
+  type          CategoryType
+  categoryId    String?
+  paymentMethod String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  category      Category?    @relation(fields: [categoryId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([type])
+}
+
+model Asset {
+  id               String      @id @default(cuid())
+  userId           String
+  name             String
+  acquisitionValue Int
+  acquisitionDate  DateTime
+  depreciation     Int?
+  status           AssetStatus
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Investment {
+  id           String         @id @default(cuid())
+  userId       String
+  name         String
+  kind         InvestmentKind
+  buyDate      DateTime
+  units        Int
+  buyPrice     Int
+  currentPrice Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Budget {
+  id            String   @id @default(cuid())
+  userId        String
+  categoryId    String?
+  amount        Int
+  period        BudgetPeriod @default(monthly)
+  year          Int
+  month         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category? @relation(fields: [categoryId], references: [id])
+
+  @@unique([userId, categoryId, year, month])
+  @@index([userId, year, month])
+}
+
+model ReccurringTransaction {
+  id            String   @id @default(cuid())
+  userId        String
+  description   String
+  amount        Int
+  type          CategoryType
+  categoryId    String?
+  frequency     Frequency @default(monthly)
+  startDate     DateTime
+  nextDate      DateTime
+  endDate       DateTime?
+  isActive      Boolean  @default(true)
+  lastExecuted  DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([userId, isActive, nextDate])
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+enum AssetStatus {
+  active
+  inactive
+  disposed
+}
+
+enum InvestmentKind {
+  stock
+  bond
+  deposit
+  mutual_fund
+  other
+}
+
+enum BudgetPeriod {
+  monthly
+  quarterly
+  yearly
+}
+
+enum Frequency {
+  daily
+  weekly
+  monthly
+  quarterly
+  yearly
+}

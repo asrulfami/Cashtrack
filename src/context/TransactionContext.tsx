@@ -8,58 +8,52 @@ import React, {
   type ReactNode,
 } from "react";
 import { type Transaction } from "@/types";
-import * as api from "@/lib/transaction-api";
 
-// Tipe untuk nilai yang akan disediakan oleh Context
 interface TransactionContextType {
   transactions: Transaction[];
-  addTransaction: (data: Omit<Transaction, "id">) => void;
-  updateTransaction: (data: Transaction) => void;
-  deleteTransaction: (id: number) => void;
   loading: boolean;
+  refresh: () => Promise<void>;
 }
 
-// Membuat Context dengan nilai default
 const TransactionContext = createContext<TransactionContextType | undefined>(
   undefined
 );
 
-// Membuat komponen Provider
 export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Memuat data awal dari API (localStorage)
-  useEffect(() => {
+  const loadTransactions = async () => {
     setLoading(true);
-    const data = api.getTransactions();
-    setTransactions(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/transactions");
+      if (res.ok) {
+        const data = await res.json();
+        setTransactions(data.map((t: any) => ({
+          id: t.id,
+          date: new Date(t.date).toISOString().slice(0, 10),
+          description: t.description,
+          amount: t.amount,
+          type: t.type,
+          category: t.category?.name || undefined,
+          paymentMethod: t.paymentMethod || undefined,
+        })));
+      }
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTransactions();
   }, []);
-
-  const handleAddTransaction = (data: Omit<Transaction, "id">) => {
-    const newTransaction = api.addTransaction(data);
-    setTransactions((prev) => [...prev, newTransaction]);
-  };
-
-  const handleUpdateTransaction = (data: Transaction) => {
-    const updatedTransaction = api.updateTransaction(data);
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
-    );
-  };
-
-  const handleDeleteTransaction = (id: number) => {
-    api.deleteTransaction(id);
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-  };
 
   const value = {
     transactions,
-    addTransaction: handleAddTransaction,
-    updateTransaction: handleUpdateTransaction,
-    deleteTransaction: handleDeleteTransaction,
     loading,
+    refresh: loadTransactions,
   };
 
   return (
@@ -69,7 +63,6 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook untuk menggunakan TransactionContext
 export const useTransactions = () => {
   const context = useContext(TransactionContext);
   if (context === undefined) {

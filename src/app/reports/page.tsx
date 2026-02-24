@@ -1,72 +1,125 @@
 'use client';
 
-import React from 'react';
-import SummaryCard from '@/components/SummaryCard';
-import CashFlowChart from '@/components/CashFlowChart';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import useSWR from 'swr';
+import StatCard from '@/components/StatCard';
+import CashFlowChart, { type ChartData } from '@/components/CashFlowChart';
+import CategoryChart from '@/components/CategoryChart';
+import formatCurrency from '@/lib/formatCurrency';
+import FilterBar from '@/components/FilterBar';
+import { useMemo, useState } from 'react';
 
-// Mock data for spending by category
-const categoryData = [
-  { name: 'Food', value: 400 },
-  { name: 'Transportation', value: 300 },
-  { name: 'Utilities', value: 200 },
-  { name: 'Entertainment', value: 250 },
-  { name: 'Other', value: 150 },
-];
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+export default function ReportsPage() {
+  const [range, setRange] = useState<{ from?: string; to?: string }>({});
+  const [q, setQ] = useState('');
+  const [type, setType] = useState<'income' | 'expense' | undefined>(undefined);
+  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
 
-const ReportsPage = () => {
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (range.from) p.set('from', range.from);
+    if (range.to) p.set('to', range.to);
+    if (q) p.set('q', q);
+    if (type) p.set('type', type);
+    if (categoryId) p.set('categoryId', categoryId);
+    return p.toString();
+  }, [range, q, type, categoryId]);
+
+  const { data } = useSWR(`/api/transactions?${qs}`, fetcher);
+  const transactions: Array<{
+    id: string;
+    date: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+    category?: { id: string; name: string } | null;
+  }> = Array.isArray(data) ? data : [];
+
+  const { totalIncome, totalExpense, netIncome, cashflow, categories } = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    const monthly: Record<string, ChartData> = {};
+    const byCategory: Record<string, number> = {};
+    for (const t of transactions) {
+      if (t.amount > 0) income += t.amount;
+      else expense += Math.abs(t.amount);
+      const d = new Date(t.date);
+      const key = d.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+      if (!monthly[key]) monthly[key] = { month: key, income: 0, expense: 0 };
+      if (t.amount > 0) monthly[key].income += t.amount;
+      else monthly[key].expense += Math.abs(t.amount);
+      if (t.amount < 0) {
+        const name = t.category?.name || 'Lainnya';
+        byCategory[name] = (byCategory[name] || 0) + Math.abs(t.amount);
+      }
+    }
+    const cashflowArr = Object.values(monthly).sort((a, b) => {
+      const [am, ay] = a.month.split(' ');
+      const [bm, by] = b.month.split(' ');
+      const ai = new Date(`${am} 1, ${ay}`).getTime();
+      const bi = new Date(`${bm} 1, ${by}`).getTime();
+      return ai - bi;
+    });
+    const categoryArr = Object.entries(byCategory).map(([name, value]) => ({ name, value }));
+    return {
+      totalIncome: income,
+      totalExpense: expense,
+      netIncome: income - expense,
+      cashflow: cashflowArr,
+      categories: categoryArr,
+    };
+  }, [transactions]);
+
+  const onFilterChange = (v: { range: { from?: string; to?: string }; q: string; type?: 'income' | 'expense'; categoryId?: string }) => {
+    setRange(v.range || {});
+    setQ(v.q || '');
+    setType(v.type);
+    setCategoryId(v.categoryId);
+  };
+
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
-          Reports
-        </h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          <SummaryCard title="Total Income" value={12500000} type="income" />
-          <SummaryCard title="Total Expense" value={7800000} type="expense" />
-          <SummaryCard title="Net Income" value={4700000} type="balance" />
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100">
+            📊 Laporan Keuangan
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Analisis pemasukan dan pengeluaran Anda
+          </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <CashFlowChart />
-          </div>
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">
-              Spending by Category
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Filter Bar */}
+      <FilterBar onChange={onFilterChange} showType showCategory />
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <StatCard title="Total Pemasukan" value={formatCurrency(totalIncome)} />
+        <StatCard title="Total Pengeluaran" value={formatCurrency(totalExpense)} />
+        <StatCard
+          title="Pendapatan Bersih"
+          value={formatCurrency(netIncome)}
+        />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="lg:col-span-3 card">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+            📈 Arus Kas Bulanan
+          </h3>
+          <CashFlowChart data={cashflow} />
+        </div>
+        <div className="lg:col-span-2 card">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+            🥧 Distribusi Pengeluaran
+          </h3>
+          <CategoryChart data={categories} />
         </div>
       </div>
     </div>
   );
-};
-
-export default ReportsPage;
+}
