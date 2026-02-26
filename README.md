@@ -1,5 +1,5 @@
 # CashTrack
-
+<img width="953" height="446" alt="cashtrack" src="https://github.com/user-attachments/assets/a7a2eaf8-ac47-44b6-b412-26cd8aa832bb" />
 CashTrack adalah aplikasi web manajemen keuangan pribadi yang dibangun dengan Next.js dan TypeScript. Aplikasi ini memungkinkan pengguna untuk melacak pendapatan dan pengeluaran mereka, melihat riwayat transaksi, dan mendapatkan wawasan melalui visualisasi data.
 
 ## Fitur Utama
